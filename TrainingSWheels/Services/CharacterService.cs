@@ -1,46 +1,106 @@
-﻿using System;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TrainingSWheels.Data;
+using TrainingSWheels.Dtos;
 using TrainingSWheels.Models;
 
 namespace TrainingSWheels.Services
 {
     public interface ICharacterService
     {
-        List<Character> GetAllCharacters();
-        Character GetCharacterById(int id);
-        List<Character> AddCharacter(Character newCharacter);
-        List<Character> AddRandomCharacter();
+        Task<ServiceResponse<List<GetCharacterDto>>> GetAllCharacters();
+        Task<ServiceResponse<GetCharacterDto>> GetCharacterById(int id);
+        Task<ServiceResponse<List<GetCharacterDto>>> AddCharacter(AddCharacterDto newCharacter);
+        Task<ServiceResponse<GetCharacterDto>> UpdateCharacter(UpdateCharacterDto updatedCharacter);
+        Task<ServiceResponse<List<GetCharacterDto>>> DeleteCharacter(int id);
     }
 
     public class CharacterService : ICharacterService
     {
-        private static List<Character> characters = new List<Character> {
-            new Character(),
-            new Character {Id = 1, Name = "Sam"}
-        };
+        private readonly IMapper _mapper;
+        private readonly DataContext _context;
 
-        public List<Character> AddRandomCharacter()
+        public CharacterService(IMapper mapper, DataContext context)
         {
-            characters.Add(new Character());
-            return characters;
+            _mapper = mapper;
+            _context = context;
         }
 
-        public List<Character> AddCharacter(Character newCharacter)
+        public async Task<ServiceResponse<List<GetCharacterDto>>> AddCharacter(AddCharacterDto newCharacter)
         {
-            characters.Add(newCharacter);
-            return characters;
+            var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
+            Character character = _mapper.Map<Character>(newCharacter);
+            _context.Characters.Add(character);
+            await _context.SaveChangesAsync();
+            serviceResponse.Data = await _context.Characters.Select(c => _mapper.Map<GetCharacterDto>(c)).ToListAsync();
+            return serviceResponse;
         }
 
-        public List<Character> GetAllCharacters()
+        public async Task<ServiceResponse<List<GetCharacterDto>>> DeleteCharacter(int id)
         {
-            return characters;
+            var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
+            try
+            {
+                Character character = await _context.Characters.FirstAsync(c => c.Id == id);
+                _context.Characters.Remove(character);
+                await _context.SaveChangesAsync();
+
+                serviceResponse.Data = await _context.Characters.Select(c => _mapper.Map<GetCharacterDto>(c)).ToListAsync();
+
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Success = false;
+                serviceResponse.Message = ex.Message;
+            }
+            return serviceResponse;
         }
 
-        public Character GetCharacterById(int id)
+        public async Task<ServiceResponse<List<GetCharacterDto>>> GetAllCharacters()
         {
-            return characters.FirstOrDefault(c => c.Id == id);
+            var serviceResponse = new ServiceResponse<List<GetCharacterDto>>();
+            var dbCharacters = await _context.Characters.ToListAsync();
+            serviceResponse.Data = dbCharacters.Select(c => _mapper.Map<GetCharacterDto>(c)).ToList();
+            return serviceResponse;
+        }
+
+        public async Task<ServiceResponse<GetCharacterDto>> GetCharacterById(int id)
+        {
+            var serviceResponse = new ServiceResponse<GetCharacterDto>();
+            var dbCharacter = await _context.Characters.FirstOrDefaultAsync(c => c.Id == id);
+            serviceResponse.Data = _mapper.Map<GetCharacterDto>(dbCharacter);
+            return serviceResponse;
+        }
+
+        public async Task<ServiceResponse<GetCharacterDto>> UpdateCharacter(UpdateCharacterDto updatedCharacter)
+        {
+            var serviceResponse = new ServiceResponse<GetCharacterDto>();
+            try
+            {
+                Character character = await _context.Characters.FirstOrDefaultAsync(c => c.Id == updatedCharacter.Id);
+
+                character.Name = updatedCharacter.Name;
+                character.HitPoints = updatedCharacter.HitPoints;
+                character.Strenght = updatedCharacter.Strenght;
+                character.Defence = updatedCharacter.Defence;
+                character.Intelligence = updatedCharacter.Intelligence;
+                character.Class = updatedCharacter.Class;
+
+                await _context.SaveChangesAsync();
+
+                serviceResponse.Data = _mapper.Map<GetCharacterDto>(character);
+
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Success = false;
+                serviceResponse.Message = ex.Message;
+            }
+            return serviceResponse;
         }
     }
 }

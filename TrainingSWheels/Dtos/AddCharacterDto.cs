@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TrainingSWheels.Models;
 
-namespace TrainingSWheels.Models
+namespace TrainingSWheels.Dtos
 {
-    public class Character
+    public class AddCharacterDto
     {
-        public int Id { get; set; }
         public string Name { get; set; } = "Frodo";
         public int HitPoints { get; set; } = 100;
         public int Strenght { get; set; } = 10;
