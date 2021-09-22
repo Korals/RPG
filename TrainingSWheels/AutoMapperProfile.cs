@@ -16,6 +16,7 @@ namespace TrainingSWheels
             CreateMap<AddCharacterDto, Character>();
             CreateMap<Weapon, GetWeaponDto>();
             CreateMap<Skill, GetSkillDto>();
+            CreateMap<Character, HighscoreDto>();
         }
     }
 }

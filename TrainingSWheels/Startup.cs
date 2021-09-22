@@ -64,6 +64,7 @@ namespace TrainingSWheels
                 });
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IWeaponService, WeaponService>();
+            services.AddScoped<IFightService, FightService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
